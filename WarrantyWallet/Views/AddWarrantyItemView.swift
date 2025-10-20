@@ -47,227 +47,30 @@ struct AddWarrantyItemView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                // Receipt section at the top
-                Section {
-                    if selectedImage != nil {
-                        VStack(spacing: 12) {
-                            if let image = selectedImage {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(maxHeight: 200)
-                                    .cornerRadius(12)
-                                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                            }
-                            
-                            HStack {
-                                Button(role: .destructive) {
-                                    self.selectedImage = nil
-                                    self.aiPopulatedFields.removeAll()
-                                } label: {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "trash")
-                                        Text("Remove")
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.regular)
-                            }
-                            .padding(.top, 4)
-                        }
-                    } else {
-                        VStack(spacing: 16) {
-                            Image(systemName: "receipt")
-                                .font(.system(size: 48))
-                                .foregroundColor(.gray)
-                            
-                            Text("Add Receipt Photo")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                            
-                            HStack(spacing: 12) {
-                                Button {
-                                    checkCameraPermission()
-                                } label: {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "camera")
-                                        Text("New Photo")
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.regular)
-                                
-                                Button {
-                                    showingImagePicker = true
-                                } label: {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "photo.on.rectangle")
-                                        Text("Choose")
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.regular)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                    }
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Receipt Section
+                    receiptSection
                     
-                    if selectedImage != nil {
-                        Button(action: processReceipt) {
-                            HStack {
-                                if isProcessing {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: "sparkles")
-                                        .foregroundColor(.blue)
-                                }
-                                Text(isProcessing ? "Processing with AI..." : "Extract Information with AI")
-                            }
-                        }
-                        .disabled(isProcessing)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                    }
-                } header: {
-                    Text("Receipt")
-                }
-                
-                // Item Information section
-                Section {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            if aiPopulatedFields.contains("itemName") {
-                                Image(systemName: "sparkles")
-                                    .foregroundColor(.blue)
-                                    .font(.caption)
-                            }
-                            TextField("Item Name", text: $itemName)
-                        }
-                        
-                        HStack {
-                            if aiPopulatedFields.contains("storeName") {
-                                Image(systemName: "sparkles")
-                                    .foregroundColor(.blue)
-                                    .font(.caption)
-                            }
-                            TextField("Store Name", text: $storeName)
-                        }
-                        
-                        HStack {
-                            if aiPopulatedFields.contains("price") {
-                                Image(systemName: "sparkles")
-                                    .foregroundColor(.blue)
-                                    .font(.caption)
-                            }
-                            TextField("Price", text: $price)
-                                .keyboardType(.decimalPad)
-                        }
-                        
-                        HStack {
-                            if aiPopulatedFields.contains("purchaseDate") {
-                                Image(systemName: "sparkles")
-                                    .foregroundColor(.blue)
-                                    .font(.caption)
-                            }
-                            DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
-                        }
-                    }
-                } header: {
-                    Text("Item Information")
-                } footer: {
-                    if !aiPopulatedFields.isEmpty {
-                        HStack {
-                            Image(systemName: "sparkles")
-                                .foregroundColor(.blue)
-                                .font(.caption)
-                            Text("Filled by AI")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                
-                // Warranty & Return section
-                Section {
-                    Button {
-                        showingEditDetails = true
-                    } label: {
-                        VStack(spacing: 16) {
-                            HStack {
-                                if aiPopulatedFields.contains("purchaseDate") {
-                                    Image(systemName: "sparkles")
-                                        .foregroundColor(.blue)
-                                        .font(.caption)
-                                }
-                                Text("Warranty Period")
-                                Spacer()
-                                Text("\(warrantyLengthMonths) months")
-                                    .foregroundColor(.secondary)
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
-                            }
-                            HStack {
-                                if aiPopulatedFields.contains("purchaseDate") {
-                                    Image(systemName: "sparkles")
-                                        .foregroundColor(.blue)
-                                        .font(.caption)
-                                }
-                                Text("Return Period")
-                                Spacer()
-                                Text("\(returnWindowDays) days")
-                                    .foregroundColor(.secondary)
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
-                            }
-
-                        }
-                    }
-                    .buttonStyle(.plain)
+                    // Item Information Section
+                    itemInformationSection
                     
-                    if !itemName.isEmpty && !storeName.isEmpty {
-                        Button {
-                            findReturn()
-                        } label: {
-                            HStack {
-                                if isProcessingReturn {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: "sparkles")
-                                        .foregroundColor(.blue)
-                                }
-                                Text(isProcessingReturn ? "Processing with AI..." : "Find information using web and AI")
-                            }
-                        }
-                        .disabled(isProcessingReturn)
-                    }
+                    // Warranty & Return Section
+                    warrantyReturnSection
                     
-                } header: {
-                    Text("Warranty and Return")
+                    // Save Button
+                    saveButton
                 }
-
+                .padding()
             }
-            .navigationTitle("Add Warranty Item")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Add Item")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         dismiss()
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        saveItem()
-                    }
-                    .disabled(itemName.isEmpty || isProcessing)
                 }
             }
             .sheet(isPresented: $showingImagePicker) {
@@ -294,6 +97,298 @@ struct AddWarrantyItemView: View {
             }
         }
     }
+    
+    // MARK: - Receipt Section
+    
+    private var receiptSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Receipt")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                Spacer()
+            }
+            
+            if selectedImage != nil {
+                VStack(spacing: 16) {
+                    // Receipt Image
+                    if let image = selectedImage {
+                        ZStack(alignment: .topTrailing) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxHeight: 250)
+                                .cornerRadius(12)
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                            
+                            Button(action: {
+                                withAnimation {
+                                    self.selectedImage = nil
+                                    self.aiPopulatedFields.removeAll()
+                                }
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.white)
+                                    .background(Circle().fill(Color.black.opacity(0.6)))
+                            }
+                            .padding(8)
+                        }
+                    }
+                    
+                    // Extract Button
+                    Button(action: processReceipt) {
+                        HStack(spacing: 8) {
+                            if isProcessing {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.9)
+                            } else {
+                                Image(systemName: "sparkles")
+                            }
+                            Text(isProcessing ? "Extracting..." : "Extract with AI")
+                                .fontWeight(.medium)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isProcessing ? Color.blue.opacity(0.6) : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                    .disabled(isProcessing)
+                    
+                    if !aiPopulatedFields.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                            Text("Information extracted successfully")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+                }
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .cornerRadius(16)
+            } else {
+                // Empty State
+                VStack(spacing: 20) {
+                    Image(systemName: "doc.text.image")
+                        .font(.system(size: 56))
+                        .foregroundColor(.blue.opacity(0.6))
+                        .padding(.top, 20)
+                    
+                    VStack(spacing: 8) {
+                        Text("Add a Receipt")
+                            .font(.headline)
+                        Text("Take a photo or choose from library")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    HStack(spacing: 12) {
+                        Button(action: checkCameraPermission) {
+                            VStack(spacing: 8) {
+                                Image(systemName: "camera.fill")
+                                    .font(.title2)
+                                Text("Camera")
+                                    .font(.subheadline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                            .background(Color.blue.opacity(0.1))
+                            .foregroundColor(.blue)
+                            .cornerRadius(12)
+                        }
+                        
+                        Button(action: { showingImagePicker = true }) {
+                            VStack(spacing: 8) {
+                                Image(systemName: "photo.fill")
+                                    .font(.title2)
+                                Text("Library")
+                                    .font(.subheadline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 20)
+                            .background(Color.blue.opacity(0.1))
+                            .foregroundColor(.blue)
+                            .cornerRadius(12)
+                        }
+                    }
+                    .padding(.bottom, 20)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .cornerRadius(16)
+            }
+        }
+    }
+    
+    // MARK: - Item Information Section
+    
+    private var itemInformationSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Item Details")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                Spacer()
+            }
+            
+            VStack(spacing: 16) {
+                CustomTextField(
+                    icon: "tag.fill",
+                    placeholder: "Item Name",
+                    text: $itemName,
+                    isAIPopulated: aiPopulatedFields.contains("itemName")
+                )
+                
+                CustomTextField(
+                    icon: "storefront.fill",
+                    placeholder: "Store Name",
+                    text: $storeName,
+                    isAIPopulated: aiPopulatedFields.contains("storeName")
+                )
+                
+                CustomTextField(
+                    icon: "dollarsign.circle.fill",
+                    placeholder: "Price",
+                    text: $price,
+                    keyboardType: .decimalPad,
+                    isAIPopulated: aiPopulatedFields.contains("price")
+                )
+                
+                HStack(spacing: 12) {
+                    if aiPopulatedFields.contains("purchaseDate") {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.blue)
+                            .font(.body)
+                    }
+                    Image(systemName: "calendar")
+                        .foregroundColor(.blue)
+                        .font(.body)
+                    DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
+                        .labelsHidden()
+                    Spacer()
+                }
+                .padding()
+                .background(Color(.tertiarySystemGroupedBackground))
+                .cornerRadius(12)
+            }
+            .padding()
+            .background(Color(.secondarySystemGroupedBackground))
+            .cornerRadius(16)
+        }
+    }
+    
+    // MARK: - Warranty & Return Section
+    
+    private var warrantyReturnSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Warranty & Returns")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                Spacer()
+            }
+            
+            VStack(spacing: 12) {
+                Button(action: { showingEditDetails = true }) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Warranty Period")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            Text("\(warrantyLengthMonths) months")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.subheadline)
+                    }
+                    .padding()
+                    .background(Color(.tertiarySystemGroupedBackground))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+                
+                Button(action: { showingEditDetails = true }) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Return Window")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            Text("\(returnWindowDays) days")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.subheadline)
+                    }
+                    .padding()
+                    .background(Color(.tertiarySystemGroupedBackground))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+                
+                if !itemName.isEmpty && !storeName.isEmpty {
+                    Button(action: findReturn) {
+                        HStack(spacing: 8) {
+                            if isProcessingReturn {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.9)
+                            } else {
+                                Image(systemName: "magnifyingglass")
+                            }
+                            Text(isProcessingReturn ? "Searching..." : "Find Policy Online")
+                                .fontWeight(.medium)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isProcessingReturn ? Color.green.opacity(0.6) : Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                    .disabled(isProcessingReturn)
+                }
+            }
+            .padding()
+            .background(Color(.secondarySystemGroupedBackground))
+            .cornerRadius(16)
+        }
+    }
+    
+    // MARK: - Save Button
+    
+    private var saveButton: some View {
+        Button(action: saveItem) {
+            Text("Save Item")
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(itemName.isEmpty ? Color.gray : Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(12)
+        }
+        .disabled(itemName.isEmpty || isProcessing)
+        .padding(.top, 8)
+    }
+    
+    // MARK: - Helper Functions
     
     private func checkCameraPermission() {
         cameraPermissionStatus = AVCaptureDevice.authorizationStatus(for: .video)
@@ -335,10 +430,8 @@ struct AddWarrantyItemView: View {
                 let receiptData = try await warrantyService.processReceiptImageForForm(imageData)
                 
                 await MainActor.run {
-                    // Track which fields are being populated by AI
                     var populatedFields: Set<String> = []
                     
-                    // Update form fields with extracted data
                     if let itemName = receiptData.itemName, !itemName.isEmpty {
                         self.itemName = itemName
                         populatedFields.insert("itemName")
@@ -362,7 +455,7 @@ struct AddWarrantyItemView: View {
                     aiPopulatedFields = populatedFields
                     isProcessing = false
                 }
-            } catch {	
+            } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     showingError = true
@@ -411,12 +504,10 @@ struct AddWarrantyItemView: View {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     showingError = true
-                    isProcessing = false
+                    isProcessingReturn = false
                 }
             }
         }
-        
-        
     }
     
     private func saveItem() {
@@ -453,6 +544,36 @@ struct AddWarrantyItemView: View {
         }
     }
 }
+
+// MARK: - Custom TextField Component
+
+struct CustomTextField: View {
+    let icon: String
+    let placeholder: String
+    @Binding var text: String
+    var keyboardType: UIKeyboardType = .default
+    let isAIPopulated: Bool
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            if isAIPopulated {
+                Image(systemName: "sparkles")
+                    .foregroundColor(.blue)
+                    .font(.body)
+            }
+            Image(systemName: icon)
+                .foregroundColor(.blue)
+                .font(.body)
+            TextField(placeholder, text: $text)
+                .keyboardType(keyboardType)
+        }
+        .padding()
+        .background(Color(.tertiarySystemGroupedBackground))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Image Picker
 
 struct UnifiedImagePicker: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
@@ -496,4 +617,3 @@ struct UnifiedImagePicker: UIViewControllerRepresentable {
 #Preview {
     AddWarrantyItemView(warrantyService: WarrantyService(context: PersistenceController.preview.container.viewContext))
 }
-
