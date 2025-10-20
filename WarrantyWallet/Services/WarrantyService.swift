@@ -45,7 +45,7 @@ class WarrantyService: ObservableObject {
         warrantyItem.createdAt = Date()
         warrantyItem.updatedAt = Date()
         
-        // Calculate warranty and return end dates
+        // Calculate warranty and return end dates≥
         warrantyItem.warrantyEndDate = calculateWarrantyEndDate(from: purchaseDate, months: warrantyLengthMonths)
         warrantyItem.returnEndDate = calculateReturnEndDate(from: purchaseDate, days: returnWindowDays)
         
@@ -56,35 +56,34 @@ class WarrantyService: ObservableObject {
     // MARK: - Process Receipt Image
     
     func processReceiptImage(_ imageData: Data) async throws -> WarrantyItem {
-        // Extract text from image
-        let extractedText = try await openAIService.extractTextFromImage(imageData)
+        // Extract structured data from image using the new method
+        let receiptData = try await openAIService.extractReceiptData(imageData)
         
-        // Parse receipt information
-        let receiptInfo = try await openAIService.parseReceiptText(extractedText)
-        
-        // Look up warranty information for the first item
-        let firstItem = receiptInfo.items.first
-        let warrantyInfo = try await openAIService.lookupWarrantyInformation(
-            for: firstItem?.name ?? "Unknown Item",
-            storeName: receiptInfo.storeName
-        )
+        // Use default warranty information since lookupWarrantyInformation was removed
+        let warrantyLengthMonths = Config.defaultWarrantyMonths
+        let returnWindowDays = Config.defaultReturnDays
         
         // Parse purchase date
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let purchaseDate = dateFormatter.date(from: receiptInfo.purchaseDate) ?? Date()
+        let purchaseDate = receiptData.parsedDate ?? Date()
         
         // Create warranty item
         return try await createWarrantyItem(
-            itemName: firstItem?.name ?? "Unknown Item",
-            storeName: receiptInfo.storeName,
-            price: firstItem?.price ?? 0.0,
+            itemName: receiptData.itemName ?? "Unknown Item",
+            storeName: receiptData.storeName,
+            price: receiptData.price ?? 0.0,
             purchaseDate: purchaseDate,
-            warrantyLengthMonths: warrantyInfo.warrantyMonths,
-            returnWindowDays: warrantyInfo.returnDays,
+            warrantyLengthMonths: warrantyLengthMonths,
+            returnWindowDays: returnWindowDays,
             receiptImageData: imageData,
-            extractedText: extractedText
+            extractedText: nil
         )
+    }
+    
+    // MARK: - Process Receipt Image for Form Population
+    
+    func processReceiptImageForForm(_ imageData: Data) async throws -> ReceiptData {
+        // Extract structured data from image using the new method
+        return try await openAIService.extractReceiptData(imageData)
     }
     
     // MARK: - Date Calculations

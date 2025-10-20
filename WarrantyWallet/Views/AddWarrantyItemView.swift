@@ -8,6 +8,7 @@
 import SwiftUI
 import PhotosUI
 import CoreData
+import AVFoundation
 
 struct AddWarrantyItemView: View {
     @Environment(\.dismiss) private var dismiss
@@ -25,6 +26,7 @@ struct AddWarrantyItemView: View {
     @State private var isProcessing = false
     @State private var errorMessage = ""
     @State private var showingError = false
+    @State private var cameraPermissionStatus: AVAuthorizationStatus = .notDetermined
     
     init(warrantyService: WarrantyService) {
         _warrantyService = StateObject(wrappedValue: warrantyService)
@@ -57,7 +59,7 @@ struct AddWarrantyItemView: View {
                     
                     HStack {
                         Button("Take Photo") {
-                            showingCamera = true
+                            checkCameraPermission()
                         }
                         .buttonStyle(.bordered)
                         
@@ -105,16 +107,43 @@ struct AddWarrantyItemView: View {
                 }
             }
             .sheet(isPresented: $showingImagePicker) {
-                ImagePicker(selectedImage: $selectedImage)
+                UnifiedImagePicker(selectedImage: $selectedImage, sourceType: .photoLibrary)
             }
-            .sheet(isPresented: $showingCamera) {
-                CameraView(selectedImage: $selectedImage)
+            .fullScreenCover(isPresented: $showingCamera) {
+                UnifiedImagePicker(selectedImage: $selectedImage, sourceType: .camera)
+                    .ignoresSafeArea() // ⬅️ ensure no top/bottom gaps from safe areas
             }
             .alert("Error", isPresented: $showingError) {
                 Button("OK") { }
             } message: {
                 Text(errorMessage)
             }
+        }
+    }
+    
+    private func checkCameraPermission() {
+        cameraPermissionStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        
+        switch cameraPermissionStatus {
+        case .authorized:
+            showingCamera = true
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        self.showingCamera = true
+                    } else {
+                        self.errorMessage = "Camera access is required to take photos. Please enable it in Settings."
+                        self.showingError = true
+                    }
+                }
+            }
+        case .denied, .restricted:
+            errorMessage = "Camera access is required to take photos. Please enable it in Settings."
+            showingError = true
+        @unknown default:
+            errorMessage = "Camera access is required to take photos. Please enable it in Settings."
+            showingError = true
         }
     }
     
@@ -128,16 +157,14 @@ struct AddWarrantyItemView: View {
         
         Task {
             do {
-                let warrantyItem = try await warrantyService.processReceiptImage(imageData)
+                let receiptData = try await warrantyService.processReceiptImageForForm(imageData)
                 
                 await MainActor.run {
                     // Update form fields with extracted data
-                    itemName = warrantyItem.itemName ?? "Default Name"
-                    storeName = warrantyItem.storeName ?? "Default Store"
-                    price = String(format: "%.2f", warrantyItem.price)
-                    purchaseDate = warrantyItem.purchaseDate ?? Date()
-                    warrantyLengthMonths = Int(warrantyItem.warrantyLengthMonths)
-                    returnWindowDays = Int(warrantyItem.returnWindowDays)
+                    itemName = receiptData.itemName ?? ""
+                    storeName = receiptData.storeName ?? ""
+                    price = receiptData.formattedPrice
+                    purchaseDate = receiptData.parsedDate ?? Date()
                     isProcessing = false
                 }
             } catch {	
@@ -181,14 +208,16 @@ struct AddWarrantyItemView: View {
     }
 }
 
-struct ImagePicker: UIViewControllerRepresentable {
+struct UnifiedImagePicker: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
     @Environment(\.dismiss) private var dismiss
+    
+    let sourceType: UIImagePickerController.SourceType
     
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
-        picker.sourceType = .photoLibrary
+        picker.sourceType = sourceType
         return picker
     }
     
@@ -199,46 +228,9 @@ struct ImagePicker: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: ImagePicker
+        let parent: UnifiedImagePicker
         
-        init(_ parent: ImagePicker) {
-            self.parent = parent
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let image = info[.originalImage] as? UIImage {
-                parent.selectedImage = image
-            }
-            parent.dismiss()
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.dismiss()
-        }
-    }
-}
-
-struct CameraView: UIViewControllerRepresentable {
-    @Binding var selectedImage: UIImage?
-    @Environment(\.dismiss) private var dismiss
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.sourceType = .camera
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: CameraView
-        
-        init(_ parent: CameraView) {
+        init(_ parent: UnifiedImagePicker) {
             self.parent = parent
         }
         
