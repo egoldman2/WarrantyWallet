@@ -20,10 +20,15 @@ struct AddWarrantyItemView: View {
     @State private var purchaseDate = Date()
     @State private var warrantyLengthMonths = Config.defaultWarrantyMonths
     @State private var returnWindowDays = Config.defaultReturnDays
+    @State private var warrantyConditions = "Standard warranty terms apply"
+    @State private var returnConditions = "Standard return policy applies"
+    @State private var warrantyEvidenceUrl = ""
+    @State private var returnEvidenceUrl = ""
     @State private var selectedImage: UIImage?
     @State private var showingImagePicker = false
     @State private var showingCamera = false
     @State private var isProcessing = false
+    @State private var isProcessingReturn = false
     @State private var errorMessage = ""
     @State private var showingError = false
     @State private var cameraPermissionStatus: AVAuthorizationStatus = .notDetermined
@@ -34,6 +39,7 @@ struct AddWarrantyItemView: View {
     // Navigation state for detail views
     @State private var showingWarrantyDetails = false
     @State private var showingReturnDetails = false
+    @State private var showingEditDetails = false
     
     init(warrantyService: WarrantyService) {
         _warrantyService = StateObject(wrappedValue: warrantyService)
@@ -134,42 +140,42 @@ struct AddWarrantyItemView: View {
                 
                 // Item Information section
                 Section {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 16) {
                         HStack {
-                            TextField("Item Name", text: $itemName)
                             if aiPopulatedFields.contains("itemName") {
                                 Image(systemName: "sparkles")
                                     .foregroundColor(.blue)
                                     .font(.caption)
                             }
+                            TextField("Item Name", text: $itemName)
                         }
                         
                         HStack {
-                            TextField("Store Name", text: $storeName)
                             if aiPopulatedFields.contains("storeName") {
                                 Image(systemName: "sparkles")
                                     .foregroundColor(.blue)
                                     .font(.caption)
                             }
+                            TextField("Store Name", text: $storeName)
                         }
                         
                         HStack {
-                            TextField("Price", text: $price)
-                                .keyboardType(.decimalPad)
                             if aiPopulatedFields.contains("price") {
                                 Image(systemName: "sparkles")
                                     .foregroundColor(.blue)
                                     .font(.caption)
                             }
+                            TextField("Price", text: $price)
+                                .keyboardType(.decimalPad)
                         }
                         
                         HStack {
-                            DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
                             if aiPopulatedFields.contains("purchaseDate") {
                                 Image(systemName: "sparkles")
                                     .foregroundColor(.blue)
                                     .font(.caption)
                             }
+                            DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
                         }
                     }
                 } header: {
@@ -189,19 +195,63 @@ struct AddWarrantyItemView: View {
                 
                 // Warranty & Return section
                 Section {
-                    VStack(spacing: 16) {
-                        Stepper("\(warrantyLengthMonths) months", value: $warrantyLengthMonths, in: 1...60)
+                    Button {
+                        showingEditDetails = true
+                    } label: {
+                        VStack(spacing: 16) {
+                            HStack {
+                                if aiPopulatedFields.contains("purchaseDate") {
+                                    Image(systemName: "sparkles")
+                                        .foregroundColor(.blue)
+                                        .font(.caption)
+                                }
+                                Text("Warranty Period")
+                                Spacer()
+                                Text("\(warrantyLengthMonths) months")
+                                    .foregroundColor(.secondary)
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+                            HStack {
+                                if aiPopulatedFields.contains("purchaseDate") {
+                                    Image(systemName: "sparkles")
+                                        .foregroundColor(.blue)
+                                        .font(.caption)
+                                }
+                                Text("Return Period")
+                                Spacer()
+                                Text("\(returnWindowDays) days")
+                                    .foregroundColor(.secondary)
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+
+                        }
                     }
-                } header: {
-                    Text("Warranty Period")
-                }
-                
-                Section {
-                    VStack(spacing: 16) {
-                        Stepper("\(returnWindowDays) days", value: $returnWindowDays, in: 1...365)
+                    .buttonStyle(.plain)
+                    
+                    if !itemName.isEmpty && !storeName.isEmpty {
+                        Button {
+                            findReturn()
+                        } label: {
+                            HStack {
+                                if isProcessingReturn {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "sparkles")
+                                        .foregroundColor(.blue)
+                                }
+                                Text(isProcessingReturn ? "Processing with AI..." : "Find information using web and AI")
+                            }
+                        }
+                        .disabled(isProcessingReturn)
                     }
+                    
                 } header: {
-                    Text("Return Period")
+                    Text("Warranty and Return")
                 }
 
             }
@@ -225,7 +275,17 @@ struct AddWarrantyItemView: View {
             }
             .fullScreenCover(isPresented: $showingCamera) {
                 UnifiedImagePicker(selectedImage: $selectedImage, sourceType: .camera)
-                    .ignoresSafeArea() // ⬅️ ensure no top/bottom gaps from safe areas
+                    .ignoresSafeArea()
+            }
+            .sheet(isPresented: $showingEditDetails) {
+                EditWarrantyDetailsView(
+                    warrantyLengthMonths: $warrantyLengthMonths,
+                    returnWindowDays: $returnWindowDays,
+                    warrantyConditions: $warrantyConditions,
+                    returnConditions: $returnConditions,
+                    warrantyEvidenceUrl: $warrantyEvidenceUrl,
+                    returnEvidenceUrl: $returnEvidenceUrl
+                )
             }
             .alert("Error", isPresented: $showingError) {
                 Button("OK") { }
@@ -312,6 +372,53 @@ struct AddWarrantyItemView: View {
         }
     }
     
+    private func findReturn() {
+        isProcessingReturn = true
+        
+        Task {
+            do {
+                let returnInfo = try await warrantyService.findReturnInfo(for: storeName)
+                let warrantyInfo = try await warrantyService.findWarrantyInfo(for: itemName)
+                
+                await MainActor.run {
+                    if let returnDays = returnInfo?.returnDays {
+                        self.returnWindowDays = returnDays
+                    }
+                    
+                    if let conditions = returnInfo?.conditions {
+                        self.returnConditions = conditions
+                    }
+                    
+                    if let evidenceUrl = returnInfo?.evidenceUrl {
+                        self.returnEvidenceUrl = evidenceUrl
+                    }
+                    
+                    if let warrantyMonths = warrantyInfo?.warrantyMonths {
+                        self.warrantyLengthMonths = warrantyMonths
+                    }
+                    
+                    if let warrantyConditions = warrantyInfo?.conditions {
+                        self.warrantyConditions = warrantyConditions
+                    }
+                    
+                    if let warrantyEvidenceUrl = warrantyInfo?.evidenceUrl {
+                        self.warrantyEvidenceUrl = warrantyEvidenceUrl
+                    }
+                    
+                    isProcessingReturn = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    showingError = true
+                    isProcessing = false
+                }
+            }
+        }
+        
+        
+    }
+    
     private func saveItem() {
         guard !itemName.isEmpty else { return }
         
@@ -327,7 +434,11 @@ struct AddWarrantyItemView: View {
                     warrantyLengthMonths: warrantyLengthMonths,
                     returnWindowDays: returnWindowDays,
                     receiptImageData: selectedImage?.jpegData(compressionQuality: 0.8),
-                    extractedText: nil
+                    extractedText: nil,
+                    warrantyConditions: warrantyConditions.isEmpty ? nil : warrantyConditions,
+                    warrantyEvidenceUrl: warrantyEvidenceUrl.isEmpty ? nil : warrantyEvidenceUrl,
+                    returnConditions: returnConditions.isEmpty ? nil : returnConditions,
+                    returnEvidenceUrl: returnEvidenceUrl.isEmpty ? nil : returnEvidenceUrl
                 )
                 
                 await MainActor.run {

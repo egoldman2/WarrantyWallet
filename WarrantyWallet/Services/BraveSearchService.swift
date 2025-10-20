@@ -25,6 +25,8 @@ class BraveSearchService {
     func searchWarrantyInfo(for productName: String, country: String = "australia") async throws -> WarrantyInfo {
         print("🔍 BraveSearchService: Searching for warranty info for product: \(productName)")
         
+        
+        
         let query = "\(productName) warranty period \(country)"
         let searchResults = try await performSearch(query: query, country: country)
         
@@ -36,10 +38,10 @@ class BraveSearchService {
     
     // MARK: - Search for Return Policy Information
     
-    func searchReturnPolicyInfo(for productName: String, country: String = "australia") async throws -> ReturnPolicyInfo {
-        print("🔍 BraveSearchService: Searching for return policy info for product: \(productName)")
+    func searchReturnPolicyInfo(for storeName: String, country: String = "australia") async throws -> ReturnPolicyInfo {
+        print("🔍 BraveSearchService: Searching for return policy info for product: \(storeName)")
         
-        let query = "\(productName) return policy \(country)"
+        let query = "\"\(storeName)\" return policy \(country)"
         let searchResults = try await performSearch(query: query, country: country)
         
         // Pass results to OpenAI for processing
@@ -61,7 +63,7 @@ class BraveSearchService {
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "count", value: "10"),
             URLQueryItem(name: "search_lang", value: "en"),
-            URLQueryItem(name: "country", value: country),
+            URLQueryItem(name: "country", value: "AU"),
             URLQueryItem(name: "result_filter", value: "web")
         ]
         
@@ -77,8 +79,14 @@ class BraveSearchService {
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            print("❌ BraveSearchService: Non-HTTP response received.")
+            throw BraveSearchError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let bodyPreview = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+            print("❌ BraveSearchService: HTTP status code: \(httpResponse.statusCode)\nResponse body: \(bodyPreview)")
             throw BraveSearchError.invalidResponse
         }
         
@@ -92,6 +100,8 @@ class BraveSearchService {
         let combinedText = webResults.prefix(5).map { result in
             "Title: \(result.title)\nDescription: \(result.description)\nURL: \(result.url)"
         }.joined(separator: "\n\n")
+        
+        print(combinedText)
         
         return combinedText
     }

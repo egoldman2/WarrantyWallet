@@ -11,11 +11,15 @@
         <attribute name="price" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="purchaseDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="receiptImageData" optional="YES" attributeType="Binary"/>
+        <attribute name="returnConditions" optional="YES" attributeType="String"/>
         <attribute name="returnEndDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="returnEvidenceUrl" optional="YES" attributeType="String"/>
         <attribute name="returnWindowDays" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="storeName" optional="YES" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="warrantyConditions" optional="YES" attributeType="String"/>
         <attribute name="warrantyEndDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="warrantyEvidenceUrl" optional="YES" attributeType="String"/>
         <attribute name="warrantyLengthMonths" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
     </entity>
 </model>

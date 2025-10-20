@@ -13,10 +13,12 @@ class WarrantyService: ObservableObject {
     
     private let context: NSManagedObjectContext
     private let openAIService: OpenAIService
+    private let braveSearchService: BraveSearchService
     
     init(context: NSManagedObjectContext) {
         self.context = context
         self.openAIService = OpenAIService()
+        self.braveSearchService = BraveSearchService()
     }
     
     // MARK: - Create Warranty Item
@@ -29,7 +31,11 @@ class WarrantyService: ObservableObject {
         warrantyLengthMonths: Int,
         returnWindowDays: Int,
         receiptImageData: Data?,
-        extractedText: String?
+        extractedText: String?,
+        warrantyConditions: String? = nil,
+        warrantyEvidenceUrl: String? = nil,
+        returnConditions: String? = nil,
+        returnEvidenceUrl: String? = nil
     ) async throws -> WarrantyItem {
         
         let warrantyItem = WarrantyItem(context: context)
@@ -42,6 +48,10 @@ class WarrantyService: ObservableObject {
         warrantyItem.returnWindowDays = Int16(returnWindowDays)
         warrantyItem.receiptImageData = receiptImageData
         warrantyItem.extractedText = extractedText
+        warrantyItem.warrantyConditions = warrantyConditions
+        warrantyItem.warrantyEvidenceUrl = warrantyEvidenceUrl
+        warrantyItem.returnConditions = returnConditions
+        warrantyItem.returnEvidenceUrl = returnEvidenceUrl
         warrantyItem.createdAt = Date()
         warrantyItem.updatedAt = Date()
         
@@ -138,6 +148,16 @@ class WarrantyService: ObservableObject {
         return .unknown
     }
     
+    // MARK: - Search and find warranty info
+    func findWarrantyInfo(for storeName: String) async throws -> WarrantyInfo? {
+        return try await braveSearchService.searchWarrantyInfo(for: storeName)
+    }
+    
+    // MARK: - Search and find return info
+    func findReturnInfo(for itemName: String) async throws -> ReturnPolicyInfo? {
+        return try await braveSearchService.searchReturnPolicyInfo(for: itemName)
+    }
+    
     // MARK: - Export Warranty Card
     
     func generateWarrantyCard(for item: WarrantyItem) -> String {
@@ -159,11 +179,15 @@ class WarrantyService: ObservableObject {
         - Warranty Period: \(item.warrantyLengthMonths) months
         - Warranty End Date: \(item.warrantyEndDate != nil ? formatter.string(from: item.warrantyEndDate!) : "N/A")
         - Warranty Status: \(warrantyStatus.displayName)
+        - Warranty Conditions: \(item.warrantyConditions ?? "Not specified")
+        - Warranty Evidence: \(item.warrantyEvidenceUrl ?? "Not available")
         
         Return Information:
         - Return Window: \(item.returnWindowDays) days
         - Return End Date: \(item.returnEndDate != nil ? formatter.string(from: item.returnEndDate!) : "N/A")
         - Return Status: \(returnStatus.displayName)
+        - Return Conditions: \(item.returnConditions ?? "Not specified")
+        - Return Evidence: \(item.returnEvidenceUrl ?? "Not available")
         
         Generated on: \(formatter.string(from: Date()))
         """
