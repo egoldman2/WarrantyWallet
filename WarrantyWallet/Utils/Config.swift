@@ -17,7 +17,18 @@ struct Config {
             return key
         } else {
             print("⚠️ Warning: OPENAI_API_KEY not set in environment.")
-            return ""
+            return "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"
+        }
+    }()
+    
+    // MARK: - Brave Search Configuration
+    static let braveSearchAPIKey: String = {
+        if let key = ProcessInfo.processInfo.environment["BRAVE_SEARCH_API_KEY"] {
+            print("Brave Search API key detected.")
+            return key
+        } else {
+            print("⚠️ Warning: BRAVE_SEARCH_API_KEY not set in environment.")
+            return "BSAlpNEQgvp6OadSKOR-DfRWYUk4X8Z"
         }
     }()
     
@@ -37,5 +48,9 @@ struct Config {
     
     static var isOpenAIKeyConfigured: Bool {
         return !openAIAPIKey.isEmpty
+    }
+    
+    static var isBraveSearchKeyConfigured: Bool {
+        return !braveSearchAPIKey.isEmpty
     }
 }

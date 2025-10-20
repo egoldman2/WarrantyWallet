@@ -59,6 +59,142 @@ class OpenAIService: ObservableObject {
         return receiptData
     }
     
+    // MARK: - Process Warranty Information
+    
+    func processWarrantyInfo(_ searchResults: String) async throws -> WarrantyInfo {
+        print("🧠 OpenAIService: Processing warranty info from search results")
+        
+        let url = URL(string: "\(baseURL)/chat/completions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let prompt = """
+        Given the following search results about a product, extract warranty information and output a JSON object with the following fields:
+        {
+            "warrantyMonths": "<warranty period as in integer in months>",
+            "conditions": "<key warranty conditions and exclusions>",
+            "evidenceUrl": "<the URL to the link for this information>"
+        }
+        
+        If you cannot find specific information for any field, use "Unknown" as the value.
+        Return only the JSON object and nothing else.
+        
+        Search Results:
+        \(searchResults)
+        """
+        
+        let payload: [String: Any] = [
+            "model": "gpt-5-mini",
+            "messages": [
+                [
+                    "role": "user",
+                    "content": prompt
+                ]
+            ]
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw OpenAIError.invalidResponse
+        }
+        
+        let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let choices = jsonResponse?["choices"] as? [[String: Any]],
+              let message = choices.first?["message"] as? [String: Any],
+              let content = message["content"] as? String else {
+            throw OpenAIError.noContent
+        }
+        
+        guard let jsonData = content.data(using: .utf8) else {
+            throw OpenAIError.invalidResponse
+        }
+        
+        do {
+            let warrantyInfo = try JSONDecoder().decode(WarrantyInfo.self, from: jsonData)
+            return warrantyInfo
+        } catch {
+            // Return default values if parsing fails
+            return WarrantyInfo(
+                warrantyMonths: 12,
+                conditions: "Standard warranty terms apply",
+                evidenceUrl: "No evidence"
+            )
+        }
+    }
+    
+    // MARK: - Process Return Policy Information
+    
+    func processReturnPolicyInfo(_ searchResults: String) async throws -> ReturnPolicyInfo {
+        print("🧠 OpenAIService: Processing return policy info from search results")
+        
+        let url = URL(string: "\(baseURL)/chat/completions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let prompt = """
+        Given the following search results about a product, extract return policy information and output a JSON object with the following fields:
+        {
+            "returnDays": "<return period as an integer in days>",
+            "conditions": "<key return conditions and requirements>",
+            "evidenceUrl": "<the URL to the link for this information>"
+        }
+        
+        If you cannot find specific information for any field, use "Unknown" as the value.
+        Return only the JSON object and nothing else.
+        
+        Search Results:
+        \(searchResults)
+        """
+        
+        let payload: [String: Any] = [
+            "model": "gpt-5-mini",
+            "messages": [
+                [
+                    "role": "user",
+                    "content": prompt
+                ]
+            ]
+        ]
+        
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw OpenAIError.invalidResponse
+        }
+        
+        let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let choices = jsonResponse?["choices"] as? [[String: Any]],
+              let message = choices.first?["message"] as? [String: Any],
+              let content = message["content"] as? String else {
+            throw OpenAIError.noContent
+        }
+        
+        guard let jsonData = content.data(using: .utf8) else {
+            throw OpenAIError.invalidResponse
+        }
+        
+        do {
+            let returnInfo = try JSONDecoder().decode(ReturnPolicyInfo.self, from: jsonData)
+            return returnInfo
+        } catch {
+            // Return default values if parsing fails
+            return ReturnPolicyInfo(
+                returnDays: 30,
+                conditions: "Standard return policy applies",
+                evidenceUrl: "No evidence"
+            )
+        }
+    }
+    
     // MARK: - Process Text with OpenAI (Combined Function)
     
     private func processTextWithOpenAI(_ text: String, returnType: ProcessType) async throws -> Any {
@@ -178,8 +314,14 @@ class OpenAIService: ObservableObject {
 
 struct WarrantyInfo: Codable {
     let warrantyMonths: Int
+    let conditions: String
+    let evidenceUrl: String?
+}
+
+struct ReturnPolicyInfo: Codable {
     let returnDays: Int
     let conditions: String
+    let evidenceUrl: String?
 }
 
 struct ReceiptInfo: Codable {

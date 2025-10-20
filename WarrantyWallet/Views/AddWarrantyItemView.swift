@@ -28,6 +28,13 @@ struct AddWarrantyItemView: View {
     @State private var showingError = false
     @State private var cameraPermissionStatus: AVAuthorizationStatus = .notDetermined
     
+    // Track which fields were populated by AI
+    @State private var aiPopulatedFields: Set<String> = []
+    
+    // Navigation state for detail views
+    @State private var showingWarrantyDetails = false
+    @State private var showingReturnDetails = false
+    
     init(warrantyService: WarrantyService) {
         _warrantyService = StateObject(wrappedValue: warrantyService)
     }
@@ -35,61 +42,168 @@ struct AddWarrantyItemView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Item Information") {
-                    TextField("Item Name", text: $itemName)
-                    TextField("Store Name", text: $storeName)
-                    TextField("Price", text: $price)
-                        .keyboardType(.decimalPad)
-                    DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
-                }
-                
-                Section("Warranty & Return") {
-                    Stepper("Warranty: \(warrantyLengthMonths) months", value: $warrantyLengthMonths, in: 1...60)
-                    Stepper("Return Window: \(returnWindowDays) days", value: $returnWindowDays, in: 1...365)
-                }
-                
-                Section("Receipt") {
-                    if let selectedImage = selectedImage {
-                        Image(uiImage: selectedImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxHeight: 200)
-                            .cornerRadius(8)
+                // Receipt section at the top
+                Section {
+                    if selectedImage != nil {
+                        VStack(spacing: 12) {
+                            if let image = selectedImage {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(maxHeight: 200)
+                                    .cornerRadius(12)
+                                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                            }
+                            
+                            HStack {
+                                Button(role: .destructive) {
+                                    self.selectedImage = nil
+                                    self.aiPopulatedFields.removeAll()
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "trash")
+                                        Text("Remove")
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.regular)
+                            }
+                            .padding(.top, 4)
+                        }
+                    } else {
+                        VStack(spacing: 16) {
+                            Image(systemName: "receipt")
+                                .font(.system(size: 48))
+                                .foregroundColor(.gray)
+                            
+                            Text("Add Receipt Photo")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            
+                            HStack(spacing: 12) {
+                                Button {
+                                    checkCameraPermission()
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "camera")
+                                        Text("New Photo")
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.regular)
+                                
+                                Button {
+                                    showingImagePicker = true
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "photo.on.rectangle")
+                                        Text("Choose")
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.regular)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        
                     }
                     
-                    HStack {
-                        Button("Take Photo") {
-                            checkCameraPermission()
-                        }
-                        .buttonStyle(.bordered)
-                        
-                        Button("Choose from Library") {
-                            showingImagePicker = true
-                        }
-                        .buttonStyle(.bordered)
-                        
-                        if selectedImage != nil {
-                            Button("Remove") {
-                                selectedImage = nil
+                    if selectedImage != nil {
+                        Button(action: processReceipt) {
+                            HStack {
+                                if isProcessing {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "sparkles")
+                                        .foregroundColor(.blue)
+                                }
+                                Text(isProcessing ? "Processing with AI..." : "Extract Information with AI")
                             }
-                            .buttonStyle(.bordered)
-                            .foregroundColor(.red)
+                        }
+                        .disabled(isProcessing)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                    }
+                } header: {
+                    Text("Receipt")
+                }
+                
+                // Item Information section
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            TextField("Item Name", text: $itemName)
+                            if aiPopulatedFields.contains("itemName") {
+                                Image(systemName: "sparkles")
+                                    .foregroundColor(.blue)
+                                    .font(.caption)
+                            }
+                        }
+                        
+                        HStack {
+                            TextField("Store Name", text: $storeName)
+                            if aiPopulatedFields.contains("storeName") {
+                                Image(systemName: "sparkles")
+                                    .foregroundColor(.blue)
+                                    .font(.caption)
+                            }
+                        }
+                        
+                        HStack {
+                            TextField("Price", text: $price)
+                                .keyboardType(.decimalPad)
+                            if aiPopulatedFields.contains("price") {
+                                Image(systemName: "sparkles")
+                                    .foregroundColor(.blue)
+                                    .font(.caption)
+                            }
+                        }
+                        
+                        HStack {
+                            DatePicker("Purchase Date", selection: $purchaseDate, displayedComponents: .date)
+                            if aiPopulatedFields.contains("purchaseDate") {
+                                Image(systemName: "sparkles")
+                                    .foregroundColor(.blue)
+                                    .font(.caption)
+                            }
                         }
                     }
+                } header: {
+                    Text("Item Information")
+                } footer: {
+                    if !aiPopulatedFields.isEmpty {
+                        HStack {
+                            Image(systemName: "sparkles")
+                                .foregroundColor(.blue)
+                                .font(.caption)
+                            Text("Filled by AI")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
+                // Warranty & Return section
+                Section {
+                    VStack(spacing: 16) {
+                        Stepper("\(warrantyLengthMonths) months", value: $warrantyLengthMonths, in: 1...60)
+                    }
+                } header: {
+                    Text("Warranty Period")
                 }
                 
                 Section {
-                    Button(action: processReceipt) {
-                        HStack {
-                            if isProcessing {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            }
-                            Text(isProcessing ? "Processing..." : "Process Receipt with AI")
-                        }
+                    VStack(spacing: 16) {
+                        Stepper("\(returnWindowDays) days", value: $returnWindowDays, in: 1...365)
                     }
-                    .disabled(selectedImage == nil || isProcessing)
+                } header: {
+                    Text("Return Period")
                 }
+
             }
             .navigationTitle("Add Warranty Item")
             .navigationBarTitleDisplayMode(.inline)
@@ -154,17 +268,38 @@ struct AddWarrantyItemView: View {
         }
         
         isProcessing = true
+        aiPopulatedFields.removeAll()
         
         Task {
             do {
                 let receiptData = try await warrantyService.processReceiptImageForForm(imageData)
                 
                 await MainActor.run {
+                    // Track which fields are being populated by AI
+                    var populatedFields: Set<String> = []
+                    
                     // Update form fields with extracted data
-                    itemName = receiptData.itemName ?? ""
-                    storeName = receiptData.storeName ?? ""
-                    price = receiptData.formattedPrice
-                    purchaseDate = receiptData.parsedDate ?? Date()
+                    if let itemName = receiptData.itemName, !itemName.isEmpty {
+                        self.itemName = itemName
+                        populatedFields.insert("itemName")
+                    }
+                    
+                    if let storeName = receiptData.storeName, !storeName.isEmpty {
+                        self.storeName = storeName
+                        populatedFields.insert("storeName")
+                    }
+                    
+                    if !receiptData.formattedPrice.isEmpty {
+                        self.price = receiptData.formattedPrice
+                        populatedFields.insert("price")
+                    }
+                    
+                    if let parsedDate = receiptData.parsedDate {
+                        self.purchaseDate = parsedDate
+                        populatedFields.insert("purchaseDate")
+                    }
+                    
+                    aiPopulatedFields = populatedFields
                     isProcessing = false
                 }
             } catch {	
@@ -250,3 +385,4 @@ struct UnifiedImagePicker: UIViewControllerRepresentable {
 #Preview {
     AddWarrantyItemView(warrantyService: WarrantyService(context: PersistenceController.preview.container.viewContext))
 }
+
