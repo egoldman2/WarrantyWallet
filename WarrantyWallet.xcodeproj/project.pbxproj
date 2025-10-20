@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA27F77A2EA5DCE90091301A /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = AA27F7792EA5DCE90091301A /* OpenAI */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		AA27F74F2EA5DC6A0091301A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA27F77A2EA5DCE90091301A /* OpenAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = WarrantyWallet;
 			packageProductDependencies = (
+				AA27F7792EA5DCE90091301A /* OpenAI */,
 			);
 			productName = WarrantyWallet;
 			productReference = AA27F73C2EA5DC680091301A /* WarrantyWallet.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = AA27F7332EA5DC680091301A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA27F7782EA5DCE90091301A /* XCRemoteSwiftPackageReference "OpenAI" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA27F73D2EA5DC680091301A /* Products */;
 			projectDirPath = "";
@@ -578,6 +587,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA27F7782EA5DCE90091301A /* XCRemoteSwiftPackageReference "OpenAI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MacPaw/OpenAI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA27F7792EA5DCE90091301A /* OpenAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA27F7782EA5DCE90091301A /* XCRemoteSwiftPackageReference "OpenAI" */;
+			productName = OpenAI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA27F7342EA5DC680091301A /* Project object */;
 }
