@@ -18,6 +18,8 @@ struct EditWarrantyDetailsView: View {
     @Binding var returnEvidenceUrl: String
     
     @FocusState private var focusedField: Field?
+    @State private var showingWarrantyUrl = false
+    @State private var showingReturnUrl = false
     
     enum Field {
         case warrantyConditions, warrantyUrl, returnConditions, returnUrl
@@ -27,6 +29,16 @@ struct EditWarrantyDetailsView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 24) {
+                    // Header Description
+                    VStack(spacing: 8) {
+                        Text("Customize warranty and return policy details for this item")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .padding(.top, 8)
+                    
                     // Warranty Section
                     warrantySection
                     
@@ -91,13 +103,21 @@ struct EditWarrantyDetailsView: View {
                         Spacer()
                         
                         VStack(spacing: 8) {
-                            Button(action: { warrantyLengthMonths = min(60, warrantyLengthMonths + 1) }) {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    warrantyLengthMonths = min(60, warrantyLengthMonths + 1)
+                                }
+                            }) {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.title2)
                                     .foregroundColor(.blue)
                             }
                             
-                            Button(action: { warrantyLengthMonths = max(1, warrantyLengthMonths - 1) }) {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    warrantyLengthMonths = max(1, warrantyLengthMonths - 1)
+                                }
+                            }) {
                                 Image(systemName: "minus.circle.fill")
                                     .font(.title2)
                                     .foregroundColor(.blue)
@@ -126,18 +146,33 @@ struct EditWarrantyDetailsView: View {
                         Text("Conditions")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Spacer()
+                        Text("\(warrantyConditions.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                     
-                    TextEditor(text: $warrantyConditions)
-                        .focused($focusedField, equals: .warrantyConditions)
-                        .frame(minHeight: 100)
-                        .padding(8)
-                        .background(Color(.systemBackground))
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(focusedField == .warrantyConditions ? Color.blue : Color.clear, lineWidth: 1)
-                        )
+                    ZStack(alignment: .topLeading) {
+                        if warrantyConditions.isEmpty {
+                            Text("Enter warranty terms and conditions...")
+                                .foregroundColor(.secondary.opacity(0.5))
+                                .padding(.top, 8)
+                                .padding(.leading, 4)
+                        }
+                        
+                        TextEditor(text: $warrantyConditions)
+                            .focused($focusedField, equals: .warrantyConditions)
+                            .frame(minHeight: 100)
+                            .scrollContentBackground(.hidden)
+                            .background(Color.clear)
+                    }
+                    .padding(8)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(focusedField == .warrantyConditions ? Color.blue : Color.clear, lineWidth: 1)
+                    )
                 }
                 .padding()
                 .background(Color(.tertiarySystemGroupedBackground))
@@ -152,9 +187,20 @@ struct EditWarrantyDetailsView: View {
                         Text("Evidence Link")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Spacer()
+                        if !warrantyEvidenceUrl.isEmpty, let url = URL(string: warrantyEvidenceUrl) {
+                            Link(destination: url) {
+                                HStack(spacing: 4) {
+                                    Text("Open")
+                                    Image(systemName: "arrow.up.right.square")
+                                }
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                            }
+                        }
                     }
                     
-                    HStack {
+                    HStack(spacing: 8) {
                         TextField("https://example.com/warranty", text: $warrantyEvidenceUrl)
                             .focused($focusedField, equals: .warrantyUrl)
                             .keyboardType(.URL)
@@ -163,7 +209,11 @@ struct EditWarrantyDetailsView: View {
                             .font(.subheadline)
                         
                         if !warrantyEvidenceUrl.isEmpty {
-                            Button(action: { warrantyEvidenceUrl = "" }) {
+                            Button(action: {
+                                withAnimation {
+                                    warrantyEvidenceUrl = ""
+                                }
+                            }) {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundColor(.secondary)
                             }
@@ -224,13 +274,21 @@ struct EditWarrantyDetailsView: View {
                         Spacer()
                         
                         VStack(spacing: 8) {
-                            Button(action: { returnWindowDays = min(365, returnWindowDays + 1) }) {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    returnWindowDays = min(365, returnWindowDays + 1)
+                                }
+                            }) {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.title2)
                                     .foregroundColor(.green)
                             }
                             
-                            Button(action: { returnWindowDays = max(1, returnWindowDays - 1) }) {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    returnWindowDays = max(1, returnWindowDays - 1)
+                                }
+                            }) {
                                 Image(systemName: "minus.circle.fill")
                                     .font(.title2)
                                     .foregroundColor(.green)
@@ -259,18 +317,33 @@ struct EditWarrantyDetailsView: View {
                         Text("Conditions")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Spacer()
+                        Text("\(returnConditions.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                     
-                    TextEditor(text: $returnConditions)
-                        .focused($focusedField, equals: .returnConditions)
-                        .frame(minHeight: 100)
-                        .padding(8)
-                        .background(Color(.systemBackground))
-                        .cornerRadius(8)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(focusedField == .returnConditions ? Color.green : Color.clear, lineWidth: 1)
-                        )
+                    ZStack(alignment: .topLeading) {
+                        if returnConditions.isEmpty {
+                            Text("Enter return policy terms and conditions...")
+                                .foregroundColor(.secondary.opacity(0.5))
+                                .padding(.top, 8)
+                                .padding(.leading, 4)
+                        }
+                        
+                        TextEditor(text: $returnConditions)
+                            .focused($focusedField, equals: .returnConditions)
+                            .frame(minHeight: 100)
+                            .scrollContentBackground(.hidden)
+                            .background(Color.clear)
+                    }
+                    .padding(8)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(focusedField == .returnConditions ? Color.green : Color.clear, lineWidth: 1)
+                    )
                 }
                 .padding()
                 .background(Color(.tertiarySystemGroupedBackground))
@@ -285,9 +358,20 @@ struct EditWarrantyDetailsView: View {
                         Text("Evidence Link")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Spacer()
+                        if !returnEvidenceUrl.isEmpty, let url = URL(string: returnEvidenceUrl) {
+                            Link(destination: url) {
+                                HStack(spacing: 4) {
+                                    Text("Open")
+                                    Image(systemName: "arrow.up.right.square")
+                                }
+                                .font(.caption)
+                                .foregroundColor(.green)
+                            }
+                        }
                     }
                     
-                    HStack {
+                    HStack(spacing: 8) {
                         TextField("https://example.com/returns", text: $returnEvidenceUrl)
                             .focused($focusedField, equals: .returnUrl)
                             .keyboardType(.URL)
@@ -296,7 +380,11 @@ struct EditWarrantyDetailsView: View {
                             .font(.subheadline)
                         
                         if !returnEvidenceUrl.isEmpty {
-                            Button(action: { returnEvidenceUrl = "" }) {
+                            Button(action: {
+                                withAnimation {
+                                    returnEvidenceUrl = ""
+                                }
+                            }) {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundColor(.secondary)
                             }
