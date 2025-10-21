@@ -117,7 +117,7 @@ struct AddWarrantyItemView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .frame(maxHeight: 250)
+                                .frame(maxWidth: .infinity, maxHeight: 250, alignment: .center)
                                 .cornerRadius(12)
                                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                             
@@ -633,3 +633,4 @@ struct UnifiedImagePicker: UIViewControllerRepresentable {
 #Preview {
     AddWarrantyItemView(warrantyService: WarrantyService(context: PersistenceController.preview.container.viewContext))
 }
+

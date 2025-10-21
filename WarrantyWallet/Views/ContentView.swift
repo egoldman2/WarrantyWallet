@@ -138,36 +138,34 @@ struct ContentView: View {
             .background(Color(.secondarySystemGroupedBackground))
             .cornerRadius(12)
             .padding(.horizontal)
-            .padding(.top, 8)
+            .padding(.top, 0)
             .padding(.bottom, 12)
             
-            // Summary Cards
+            // Summary Cards -  Non Scrollable now mate
             if !filteredItems.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        SummaryCard(
-                            title: "Total Items",
-                            value: "\(filteredItems.count)",
-                            icon: "bag.fill",
-                            color: .blue
-                        )
-                        
-                        SummaryCard(
-                            title: "Active",
-                            value: "\(activeItems.count)",
-                            icon: "checkmark.shield.fill",
-                            color: .green
-                        )
-                        
-                        SummaryCard(
-                            title: "Expired",
-                            value: "\(expiredItems.count)",
-                            icon: "exclamationmark.triangle.fill",
-                            color: .red
-                        )
-                    }
-                    .padding(.horizontal)
+                HStack(spacing: 12) {
+                    SummaryCard(
+                        title: "Total Items",
+                        value: "\(filteredItems.count)",
+                        icon: "bag.fill",
+                        color: .blue
+                    )
+                    
+                    SummaryCard(
+                        title: "Active",
+                        value: "\(activeItems.count)",
+                        icon: "checkmark.shield.fill",
+                        color: .green
+                    )
+                    
+                    SummaryCard(
+                        title: "Expired",
+                        value: "\(expiredItems.count)",
+                        icon: "exclamationmark.triangle.fill",
+                        color: .red
+                    )
                 }
+                .padding(.horizontal)
                 .padding(.bottom, 16)
             }
             
@@ -267,7 +265,7 @@ struct SummaryCard: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .frame(width: 140)
+        .frame(maxWidth: .infinity)
         .background(Color(.secondarySystemGroupedBackground))
         .cornerRadius(16)
     }

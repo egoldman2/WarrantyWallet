@@ -30,19 +30,8 @@ struct WarrantyItemDetailView: View {
                 // Item Overview Card
                 itemOverviewCard
                 
-                // Warranty Status Card
-                warrantyStatusCard
-                
-                // Return Window Card
-                if let returnEndDate = item.returnEndDate {
-                    returnStatusCard(returnEndDate: returnEndDate)
-                }
-                
-                // Warranty Details
-                warrantyDetailsSection
-                
-                // Return Policy Details
-                returnPolicyDetailsSection
+                // Warranty & Return Summary Cards
+                warrantyReturnSummaryCards
                 
                 // Additional Information
                 additionalInfoSection
@@ -156,78 +145,62 @@ struct WarrantyItemDetailView: View {
         .cornerRadius(16)
     }
     
-    // MARK: - Warranty Status Card
+    // MARK: - Warranty & Return Summary Cards
     
-    private var warrantyStatusCard: some View {
-        let status = warrantyService.getWarrantyStatus(for: item)
-        let daysRemaining = item.warrantyEndDate != nil ? Calendar.current.dateComponents([.day], from: Date(), to: item.warrantyEndDate!).day ?? 0 : 0
-        
-        return VStack(spacing: 16) {
-            HStack {
-                Image(systemName: "checkmark.shield.fill")
-                    .foregroundColor(Color(status.color))
-                    .font(.title2)
-                Text("Warranty Status")
-                    .font(.headline)
-                Spacer()
-            }
-            
-            VStack(spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Status")
+    private var warrantyReturnSummaryCards: some View {
+        HStack(spacing: 12) {
+            NavigationLink(destination: WarrantyDetailView(item: item)) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "checkmark.shield.fill")
+                            .foregroundColor(.blue)
+                            .font(.title3)
+                        Spacer()
+                    }
+                    
+                    Text("Warranty")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    if let warrantyEndDate = item.warrantyEndDate {
+                        Text("Expires: \(warrantyEndDate.formatted(date: .abbreviated, time: .omitted))")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        Text(status.displayName)
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundColor(Color(status.color))
-                    }
-                    Spacer()
-                    Image(systemName: statusIcon(for: status))
-                        .font(.system(size: 40))
-                        .foregroundColor(Color(status.color))
-                }
-                
-                if status != .expired && status != .unknown {
-                    Divider()
-                    
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Time Remaining")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Text("\(daysRemaining) days")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                        }
-                        Spacer()
                     }
                 }
-                
-                if let warrantyEndDate = item.warrantyEndDate {
-                    Divider()
-                    
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Expires On")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Text(warrantyEndDate.formatted(date: .long, time: .omitted))
-                                .font(.body)
-                                .fontWeight(.medium)
-                        }
-                        Spacer()
-                    }
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .cornerRadius(16)
+                .foregroundColor(.primary)
             }
-            .padding()
-            .background(Color(status.color).opacity(0.1))
-            .cornerRadius(12)
+            
+            NavigationLink(destination: ReturnPolicyDetailView(item: item)) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "arrow.uturn.backward.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.title3)
+                        Spacer()
+                    }
+                    
+                    Text("Return")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    if let returnEndDate = item.returnEndDate {
+                        Text("Expires: \(returnEndDate.formatted(date: .abbreviated, time: .omitted))")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .cornerRadius(16)
+                .foregroundColor(.primary)
+            }
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(16)
     }
     
     // MARK: - Return Status Card
@@ -302,136 +275,6 @@ struct WarrantyItemDetailView: View {
         .cornerRadius(16)
     }
     
-    // MARK: - Warranty Details Section
-    
-    private var warrantyDetailsSection: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Image(systemName: "doc.text.fill")
-                    .foregroundColor(.blue)
-                Text("Warranty Details")
-                    .font(.headline)
-                Spacer()
-            }
-            
-            VStack(spacing: 12) {
-                if let conditions = item.warrantyConditions, !conditions.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Conditions")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
-                        Text(conditions)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(Color(.tertiarySystemGroupedBackground))
-                    .cornerRadius(12)
-                }
-                
-                if let url = item.warrantyEvidenceUrl, !url.isEmpty, let validUrl = URL(string: url) {
-                    Link(destination: validUrl) {
-                        HStack {
-                            Image(systemName: "link.circle.fill")
-                                .foregroundColor(.blue)
-                            Text("View Warranty Policy")
-                                .font(.body)
-                                .fontWeight(.medium)
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                        }
-                        .foregroundColor(.blue)
-                        .padding()
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(12)
-                    }
-                }
-                
-                if (item.warrantyConditions == nil || item.warrantyConditions?.isEmpty == true) &&
-                   (item.warrantyEvidenceUrl == nil || item.warrantyEvidenceUrl?.isEmpty == true) {
-                    Text("No additional warranty details available")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.tertiarySystemGroupedBackground))
-                        .cornerRadius(12)
-                }
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(16)
-    }
-    
-    // MARK: - Return Policy Details Section
-    
-    private var returnPolicyDetailsSection: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Image(systemName: "doc.text.fill")
-                    .foregroundColor(.green)
-                Text("Return Policy Details")
-                    .font(.headline)
-                Spacer()
-            }
-            
-            VStack(spacing: 12) {
-                if let conditions = item.returnConditions, !conditions.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Conditions")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
-                        Text(conditions)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .background(Color(.tertiarySystemGroupedBackground))
-                    .cornerRadius(12)
-                }
-                
-                if let url = item.returnEvidenceUrl, !url.isEmpty, let validUrl = URL(string: url) {
-                    Link(destination: validUrl) {
-                        HStack {
-                            Image(systemName: "link.circle.fill")
-                                .foregroundColor(.green)
-                            Text("View Return Policy")
-                                .font(.body)
-                                .fontWeight(.medium)
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                        }
-                        .foregroundColor(.green)
-                        .padding()
-                        .background(Color.green.opacity(0.1))
-                        .cornerRadius(12)
-                    }
-                }
-                
-                if (item.returnConditions == nil || item.returnConditions?.isEmpty == true) &&
-                   (item.returnEvidenceUrl == nil || item.returnEvidenceUrl?.isEmpty == true) {
-                    Text("No additional return policy details available")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.tertiarySystemGroupedBackground))
-                        .cornerRadius(12)
-                }
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(16)
-    }
-    
     // MARK: - Additional Information Section
     
     private var additionalInfoSection: some View {
@@ -498,19 +341,6 @@ struct WarrantyItemDetailView: View {
     }
     
     // MARK: - Helper Functions
-    
-    private func statusIcon(for status: WarrantyStatus) -> String {
-        switch status {
-        case .active:
-            return "checkmark.circle.fill"
-        case .expiringSoon:
-            return "clock.fill"
-        case .expired:
-            return "xmark.circle.fill"
-        case .unknown:
-            return "questionmark.circle.fill"
-        }
-    }
     
     private func deleteItem() {
         withAnimation {
