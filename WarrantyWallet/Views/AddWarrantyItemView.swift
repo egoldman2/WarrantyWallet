@@ -306,10 +306,17 @@ struct AddWarrantyItemView: View {
                             Text("Warranty Period")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            Text("\(warrantyLengthMonths) months")
-                                .font(.body)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
+                            HStack {
+                                if aiPopulatedFields.contains("warranty") {
+                                    Image(systemName: "sparkles")
+                                        .foregroundColor(.blue)
+                                        .font(.body)
+                                }
+                                Text("\(warrantyLengthMonths) months")
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                            }
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
@@ -328,10 +335,17 @@ struct AddWarrantyItemView: View {
                             Text("Return Window")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            Text("\(returnWindowDays) days")
-                                .font(.body)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
+                            HStack {
+                                if aiPopulatedFields.contains("warranty") {
+                                    Image(systemName: "sparkles")
+                                        .foregroundColor(.blue)
+                                        .font(.body)
+                                }
+                                Text("\(returnWindowDays) days")
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                            }
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
@@ -470,8 +484,8 @@ struct AddWarrantyItemView: View {
         
         Task {
             do {
-                let returnInfo = try await warrantyService.findReturnInfo(for: storeName)
-                let warrantyInfo = try await warrantyService.findWarrantyInfo(for: itemName)
+                let returnInfo = try await warrantyService.findReturnInfo(for: storeName, itemName: itemName)
+                let warrantyInfo = try await warrantyService.findWarrantyInfo(for: itemName, storeName: storeName)
                 
                 await MainActor.run {
                     if let returnDays = returnInfo?.returnDays {
@@ -497,6 +511,8 @@ struct AddWarrantyItemView: View {
                     if let warrantyEvidenceUrl = warrantyInfo?.evidenceUrl {
                         self.warrantyEvidenceUrl = warrantyEvidenceUrl
                     }
+                    
+                    aiPopulatedFields.insert("warranty")
                     
                     isProcessingReturn = false
                 }

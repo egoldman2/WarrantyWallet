@@ -61,17 +61,24 @@ class OpenAIService: ObservableObject {
     
     // MARK: - Process Warranty Information
     
-    func processWarrantyInfo(_ searchResults: String) async throws -> WarrantyInfo {
+    func processWarrantyInfo(_ itemName: String, storeName: String = "") async throws -> WarrantyInfo {
         print("🧠 OpenAIService: Processing warranty info from search results")
+
+        var prompt1: String
+        if itemName == "" {
+            prompt1 = "Find the warranty policy of \(itemName). Only provide results applicable to Australia. Provide the warranty period in months, a summary of the conditions, and the URL of the source."
+        } else {
+            prompt1 = "Find the warranty policy of \(itemName) from \(storeName). Only provide results applicable to Australia. Provide the warranty period in months, a summary of the conditions, and the URL of the source."
+        }
         
-        let url = URL(string: "\(baseURL)/chat/completions")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let response = try await fetchJSONResponse(
+            prompt: prompt1,
+            useWebSearch: true,
+            responseType: String.self
+        )
         
-        let prompt = """
-        Given the following search results about a product, extract warranty information and output a JSON object with the following fields:
+        let prompt2 = """
+        Given the following summary of a warranty, extract warranty information and output a JSON object with the following fields:
         {
             "warrantyMonths": <integer or null>, // warranty period in months, use null if unknown
             "conditions": "<key warranty conditions and exclusions>",
@@ -82,75 +89,38 @@ class OpenAIService: ObservableObject {
         - If a field cannot be determined, use null (not "Unknown").
         - Respond ONLY with a valid JSON object (no markdown or explanation).
 
-        Search Results:
-        \(searchResults)
+        Summary:
+        \(response)
         """
-
-        let payload: [String: Any] = [
-            "model": "gpt-5-mini",
-            "response_format": ["type": "json_object"],
-            "messages": [
-                [
-                    "role": "user",
-                    "content": prompt
-                ]
-            ]
-        ]
         
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            print("❌ OpenAIService: HTTP error: \((response as? HTTPURLResponse)?.statusCode ?? 0). Body: \(body)")
-            throw OpenAIError.invalidResponse
-        }
-
-        let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard let choices = jsonResponse?["choices"] as? [[String: Any]],
-              let message = choices.first?["message"] as? [String: Any] else {
-            throw OpenAIError.noContent
-        }
-
-        let contentString: String = {
-            if let s = message["content"] as? String { return s }
-            if let parts = message["content"] as? [[String: Any]] {
-                return parts.compactMap { $0["text"] as? String ?? $0["output_text"] as? String }.joined()
-            }
-            return ""
-        }()
-
-        guard !contentString.isEmpty, let jsonData = contentString.data(using: .utf8) else {
-            throw OpenAIError.invalidResponse
-        }
-        
-        do {
-            let warrantyInfo = try JSONDecoder().decode(WarrantyInfo.self, from: jsonData)
-            return warrantyInfo
-        } catch {
-            // Return default values if parsing fails
-            return WarrantyInfo(
-                warrantyMonths: 12,
-                conditions: "Standard warranty terms apply",
-                evidenceUrl: "No evidence"
-            )
-        }
+        return try await fetchJSONResponse(
+            prompt: prompt2,
+            useWebSearch: false,
+            responseType: WarrantyInfo.self
+        )
     }
     
     // MARK: - Process Return Policy Information
     
-    func processReturnPolicyInfo(_ searchResults: String) async throws -> ReturnPolicyInfo {
+    func processReturnPolicyInfo(_ storeName: String, itemName: String = "") async throws -> ReturnPolicyInfo {
         print("🧠 OpenAIService: Processing return policy info from search results")
-
-        let url = URL(string: "\(baseURL)/chat/completions")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let prompt = """
-        Given the following search results about a product, extract return policy information and output a JSON object with the following fields:
+        var prompt1: String
+        if itemName == "" {
+            prompt1 = "Find the return policy of \(storeName). Prefer the policy regarding change of mind returns in Australia. Provide the return window in days, a summary of the conditions, and the URL of the source."
+        } else {
+            prompt1 = "Find the return policy of \(storeName) for the \(itemName). Prefer the policy regarding change of mind returns in Australia. Provide the return window in days, a summary of the conditions, and the URL of the source."
+        }
+        
+        
+        let response = try await fetchJSONResponse(
+            prompt: prompt1,
+            useWebSearch: true,
+            responseType: String.self
+        )
+        
+        
+        let prompt2 = """
+        Given the following summary of a store's return policy, extract return policy information and output a JSON object with the following fields:
         {
             "returnDays": <integer or null>, // return period in days, use null if unknown
             "conditions": "<key return conditions and requirements>",
@@ -162,60 +132,16 @@ class OpenAIService: ObservableObject {
         - Do not mention warranty information; strictly give return policy details and days.
         - Respond ONLY with a valid JSON object (no markdown).
 
-        Search Results:
-        \(searchResults)
+        Summary:
+        \(response)
         """
-
-        let payload: [String: Any] = [
-            "model": "gpt-5-mini",
-            "response_format": ["type": "json_object"],
-            "messages": [
-                [
-                    "role": "user",
-                    "content": prompt
-                ]
-            ]
-        ]
-
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            print("❌ OpenAIService: HTTP error: \((response as? HTTPURLResponse)?.statusCode ?? 0). Body: \(body)")
-            throw OpenAIError.invalidResponse
-        }
-
-        let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard let choices = jsonResponse?["choices"] as? [[String: Any]],
-              let message = choices.first?["message"] as? [String: Any] else {
-            throw OpenAIError.noContent
-        }
-
-        let contentString: String = {
-            if let s = message["content"] as? String { return s }
-            if let parts = message["content"] as? [[String: Any]] {
-                return parts.compactMap { $0["text"] as? String ?? $0["output_text"] as? String }.joined()
-            }
-            return ""
-        }()
-
-        guard !contentString.isEmpty, let jsonData = contentString.data(using: .utf8) else {
-            throw OpenAIError.invalidResponse
-        }
-
-        do {
-            let returnInfo = try JSONDecoder().decode(ReturnPolicyInfo.self, from: jsonData)
-            return returnInfo
-        } catch {
-            // Return default values if parsing fails
-            return ReturnPolicyInfo(
-                returnDays: 30,
-                conditions: "Standard return policy applies",
-                evidenceUrl: "No evidence"
-            )
-        }
+        
+        
+        return try await fetchJSONResponse(
+            prompt: prompt2,
+            useWebSearch: false,
+            responseType: ReturnPolicyInfo.self
+        )
     }
     
     // MARK: - Process Text with OpenAI (Combined Function)
@@ -225,103 +151,122 @@ class OpenAIService: ObservableObject {
         print("📝 OpenAIService: Input text length: \(text.count) characters")
         print("🎯 OpenAIService: Processing type: \(returnType)")
         
-        let url = URL(string: "\(baseURL)/chat/completions")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        print("🌐 OpenAIService: Created request to OpenAI API")
-        
-        let prompt: String
-        switch returnType {
-        case .cleanedText:
-            prompt = """
-            Clean up and improve this OCR-extracted text from a receipt. 
-            Fix any OCR errors, correct spelling mistakes, and format it properly.
-            Return only the cleaned text without any additional commentary.
-            
-            OCR Text:
-            \(text)
-            """
-        case .receiptData:
-            prompt = """
-            Given the following OCR-extracted text from a receipt, extract and output a JSON object with the following fields:
-            {
-                "itemName": "<name of the purchased item>",
-                "storeName": "<store name, not link>",
-                "storeUrl": "<link to the store>",
-                "price": <price as a decimal>,
-                "purchaseDate": "<date in DD-MM-YYYY format>"
-            }
-            If you cannot detect any of the fields, make your best guess based on the text. Return only the JSON object and nothing else. If there are multiple products, return the details of the product that appears first. 
-            Fix small mistakes like spelling and OCR parsing errors, however, still be aware of model numbers and names.
-
-            OCR Text:
-            \(text)
-            """
+        let prompt = """
+        Given the following OCR-extracted text from a receipt, extract and output a JSON object with the following fields:
+        {
+            "itemName": "<name of the purchased item>",
+            "storeName": "<store name, not link>",
+            "storeUrl": "<link to the store>",
+            "price": <price as a decimal>,
+            "purchaseDate": "<date in DD-MM-YYYY format>"
         }
+        If you cannot detect any of the fields, make your best guess based on the text. Return only the JSON object and nothing else. If there are multiple products, return the details of the product that appears first. 
+        Fix small mistakes like spelling and OCR parsing errors, however, still be aware of model numbers and names.
+
+        OCR Text:
+        \(text)    
+        """
+
         print("📝 OpenAIService: Created prompt for OpenAI")
         
-        let payload: [String: Any] = [
-            "model": "gpt-5-mini",
-            "messages": [
-                [
-                    "role": "user",
-                    "content": prompt
-                ]
-            ]
+        return try await fetchJSONResponse(
+            prompt: prompt,
+            useWebSearch: false,
+            responseType: ReceiptData.self
+        )
+    }
+    
+    enum OpenAIClientError: LocalizedError {
+        case httpFailure(String)
+        case malformedContainer
+        case missingText
+        case incompatibleModes(expectedString: Bool)
+
+        var errorDescription: String? {
+            switch self {
+            case .httpFailure(let body): return "Request failed: \(body)"
+            case .malformedContainer:    return "Malformed Responses API container"
+            case .missingText:           return "No text content in response"
+            case .incompatibleModes(let expectedString):
+                return expectedString
+                ? "web_search returns plain text. Use responseType == String when useWebSearch == true."
+                : "web_search is not compatible with JSON mode. Call again with useWebSearch == false for JSON."
+            }
+        }
+    }
+
+    func fetchJSONResponse<T: Decodable>(
+        prompt: String,
+        model: String = "gpt-4o-mini",
+        useWebSearch: Bool = false,
+        responseType: T.Type
+    ) async throws -> T {
+        let apiKey = apiKey
+        let url = URL(string: "https://api.openai.com/v1/responses")!
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        // Build payload
+        var payload: [String: Any] = [
+            "model": model,
+            "input": prompt
         ]
-        print("📦 OpenAIService: Created payload for OpenAI request")
-        
+
+        if useWebSearch {
+            // web_search is NOT compatible with JSON mode → request plain text
+            payload["tools"] = [["type": "web_search"]]
+            payload["text"] = ["format": ["type": "text"]]
+        } else {
+            // Strict JSON mode
+            payload["text"] = ["format": ["type": "json_object"]]
+        }
+
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        print("📤 OpenAIService: Sending request to OpenAI API")
-        
+
+        // Execute
         let (data, response) = try await URLSession.shared.data(for: request)
-        print("📥 OpenAIService: Received response from OpenAI API")
-        
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            print("❌ OpenAIService: Invalid response status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
-            throw OpenAIError.invalidResponse
-        }
-        print("✅ OpenAIService: Received successful response from OpenAI")
-        
-        let jsonResponse = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        print("🔍 OpenAIService: Parsing JSON response from OpenAI")
-        guard let choices = jsonResponse?["choices"] as? [[String: Any]],
-              let message = choices.first?["message"] as? [String: Any],
-              let content = message["content"] as? String else {
-            print("❌ OpenAIService: Failed to parse OpenAI response")
-            throw OpenAIError.noContent
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw OpenAIClientError.httpFailure(body)
         }
         
-        print("📄 OpenAIService: Raw response: \(content)")
+        // Parse Responses API envelope (skip tool calls; pick first message)
+        let any = try JSONSerialization.jsonObject(with: data, options: [])
+        guard let root = any as? [String: Any],
+              let output = root["output"] as? [[String: Any]] else {
+            throw OpenAIClientError.malformedContainer
+        }
         
-        switch returnType {
-        case .cleanedText:
-            print("✨ OpenAIService: Successfully cleaned text: \(content)")
-            return content
-            
-        case .receiptData:
-            // Parse the JSON content into ReceiptData
-            guard let jsonData = content.data(using: .utf8) else {
-                print("❌ OpenAIService: Failed to convert content to data")
-                throw OpenAIError.invalidResponse
+        guard let message = output.first(where: { ($0["type"] as? String) == "message" }),
+              let content = message["content"] as? [[String: Any]] else {
+            throw OpenAIClientError.missingText
+        }
+        
+        let text: String = {
+            for part in content {
+                if let t = part["text"] as? String { return t }
+                if let t = part["output_text"] as? String { return t }
             }
-            
-            do {
-                let receiptData = try JSONDecoder().decode(ReceiptData.self, from: jsonData)
-                print("✨ OpenAIService: Successfully parsed receipt data: \(receiptData)")
-                return receiptData
-            } catch {
-                print("❌ OpenAIService: Failed to decode JSON: \(error.localizedDescription)")
-                // Return a default ReceiptData if parsing fails
-                return ReceiptData(
-                    itemName: "Unknown Item",
-                    storeName: "Unknown Store",
-                    price: 0.0,
-                    purchaseDate: nil
-                )
+            return ""
+        }()
+
+        guard !text.isEmpty else { throw OpenAIClientError.missingText }
+
+        if useWebSearch {
+            // Caller will re-invoke without web_search to get JSON. Return raw text ONLY when requested.
+            guard T.self == String.self else {
+                throw OpenAIClientError.incompatibleModes(expectedString: true)
             }
+            return (text as! T)
+        } else {
+            // Strict JSON mode → decode directly, no recovery attempts.
+            guard let jsonData = text.data(using: .utf8) else {
+                throw OpenAIClientError.missingText
+            }
+            return try JSONDecoder().decode(T.self, from: jsonData)
         }
     }
     
@@ -345,19 +290,6 @@ struct ReturnPolicyInfo: Codable {
     let returnDays: Int?
     let conditions: String
     let evidenceUrl: String?
-}
-
-struct ReceiptInfo: Codable {
-    let storeName: String?
-    let items: [ReceiptItem]
-    let purchaseDate: String
-    let totalAmount: Double?
-    let warrantyInfo: String?
-}
-
-struct ReceiptItem: Codable {
-    let name: String
-    let price: Double
 }
 
 // MARK: - Errors

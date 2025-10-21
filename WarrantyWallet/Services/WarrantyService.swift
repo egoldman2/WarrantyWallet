@@ -13,12 +13,10 @@ class WarrantyService: ObservableObject {
     
     private let context: NSManagedObjectContext
     private let openAIService: OpenAIService
-    private let braveSearchService: BraveSearchService
     
     init(context: NSManagedObjectContext) {
         self.context = context
         self.openAIService = OpenAIService()
-        self.braveSearchService = BraveSearchService()
     }
     
     // MARK: - Create Warranty Item
@@ -149,13 +147,13 @@ class WarrantyService: ObservableObject {
     }
     
     // MARK: - Search and find warranty info
-    func findWarrantyInfo(for storeName: String) async throws -> WarrantyInfo? {
-        return try await braveSearchService.searchWarrantyInfo(for: storeName)
+    func findWarrantyInfo(for itemName: String, storeName: String = "") async throws -> WarrantyInfo? {
+        return try await openAIService.processWarrantyInfo(itemName)
     }
     
     // MARK: - Search and find return info
-    func findReturnInfo(for itemName: String) async throws -> ReturnPolicyInfo? {
-        return try await braveSearchService.searchReturnPolicyInfo(for: itemName)
+    func findReturnInfo(for storeName: String, itemName: String = "") async throws -> ReturnPolicyInfo? {
+        return try await openAIService.processReturnPolicyInfo(storeName)
     }
     
     // MARK: - Export Warranty Card
