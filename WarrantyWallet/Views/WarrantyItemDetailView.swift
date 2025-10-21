@@ -164,8 +164,12 @@ struct WarrantyItemDetailView: View {
                     
                     if let warrantyEndDate = item.warrantyEndDate {
                         Text("Expires: \(warrantyEndDate.formatted(date: .abbreviated, time: .omitted))")
-                            .font(.subheadline)
+                            .font(.footnote)
                             .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                            .truncationMode(.tail)
+                            .allowsTightening(true)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -190,8 +194,12 @@ struct WarrantyItemDetailView: View {
                     
                     if let returnEndDate = item.returnEndDate {
                         Text("Expires: \(returnEndDate.formatted(date: .abbreviated, time: .omitted))")
-                            .font(.subheadline)
+                            .font(.footnote)
                             .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.85)
+                            .truncationMode(.tail)
+                            .allowsTightening(true)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -472,3 +480,4 @@ struct EditWarrantyItemView: View {
         )
     }
 }
+
