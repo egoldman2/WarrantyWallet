@@ -13,6 +13,7 @@ struct ContentView: View {
     @StateObject private var warrantyService: WarrantyService
     @State private var showingAddItem = false
     @State private var searchText = ""
+    @State private var refreshTrigger = false
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \WarrantyItem.createdAt, ascending: false)],
@@ -38,15 +39,24 @@ struct ContentView: View {
     }
     
     var activeItems: [WarrantyItem] {
-        filteredItems.filter { item in
+        let _ = refreshTrigger // This forces the view to recompute when refreshTrigger changes
+        return filteredItems.filter { item in
             let status = warrantyService.getWarrantyStatus(for: item)
             return status == .active || status == .expiringSoon
         }
     }
     
     var expiredItems: [WarrantyItem] {
-        filteredItems.filter { item in
+        let _ = refreshTrigger // This forces the view to recompute when refreshTrigger changes
+        return filteredItems.filter { item in
             warrantyService.getWarrantyStatus(for: item) == .expired
+        }
+    }
+    
+    private func refreshData() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            refreshTrigger.toggle()
+            viewContext.refreshAllObjects()
         }
     }
 
@@ -62,6 +72,14 @@ struct ContentView: View {
             .navigationTitle("Warranty Wallet")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: refreshData) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.title3)
+                            .foregroundColor(.blue)
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingAddItem = true }) {
                         Image(systemName: "plus.circle.fill")
@@ -175,7 +193,7 @@ struct ContentView: View {
                     Section {
                         ForEach(activeItems) { item in
                             NavigationLink(destination: WarrantyItemDetailView(item: item, warrantyService: warrantyService)) {
-                                WarrantyItemRowView(item: item, warrantyService: warrantyService)
+                                WarrantyItemRowView(item: item, warrantyService: warrantyService, refreshTrigger: refreshTrigger)
                             }
                         }
                         .onDelete { indexSet in
@@ -191,7 +209,7 @@ struct ContentView: View {
                     Section {
                         ForEach(expiredItems) { item in
                             NavigationLink(destination: WarrantyItemDetailView(item: item, warrantyService: warrantyService)) {
-                                WarrantyItemRowView(item: item, warrantyService: warrantyService)
+                                WarrantyItemRowView(item: item, warrantyService: warrantyService, refreshTrigger: refreshTrigger)
                             }
                         }
                         .onDelete { indexSet in
@@ -276,8 +294,10 @@ struct SummaryCard: View {
 struct WarrantyItemRowView: View {
     let item: WarrantyItem
     let warrantyService: WarrantyService
+    let refreshTrigger: Bool
     
     var body: some View {
+        let _ = refreshTrigger // This forces the view to recompute when refreshTrigger changes
         HStack(spacing: 16) {
             // Receipt Image or Icon
             if let imageData = item.receiptImageData,
