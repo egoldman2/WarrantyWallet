@@ -13,6 +13,7 @@ import AVFoundation
 struct AddWarrantyItemView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var warrantyService: WarrantyService
+    let onDismiss: (() -> Void)?
     
     @State private var itemName = ""
     @State private var storeName = ""
@@ -41,8 +42,12 @@ struct AddWarrantyItemView: View {
     @State private var showingReturnDetails = false
     @State private var showingEditDetails = false
     
-    init(warrantyService: WarrantyService) {
+    init(warrantyService: WarrantyService, preloadedImage: UIImage? = nil, onDismiss: (() -> Void)? = nil) {
         _warrantyService = StateObject(wrappedValue: warrantyService)
+        self.onDismiss = onDismiss
+        if let preloadedImage = preloadedImage {
+            _selectedImage = State(initialValue: preloadedImage)
+        }
     }
     
     var body: some View {
@@ -69,7 +74,11 @@ struct AddWarrantyItemView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        if let onDismiss = onDismiss {
+                            onDismiss()
+                        } else {
+                            dismiss()
+                        }
                     }
                 }
             }
@@ -549,7 +558,11 @@ struct AddWarrantyItemView: View {
                 )
                 
                 await MainActor.run {
-                    dismiss()
+                    if let onDismiss = onDismiss {
+                        onDismiss()
+                    } else {
+                        dismiss()
+                    }
                 }
             } catch {
                 await MainActor.run {
