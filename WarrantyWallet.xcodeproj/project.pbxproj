@@ -19,13 +19,6 @@
 			remoteGlobalIDString = AA27F73B2EA5DC680091301A;
 			remoteInfo = WarrantyWallet;
 		};
-		AA27F7592EA5DC6A0091301A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AA27F7342EA5DC680091301A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AA27F73B2EA5DC680091301A;
-			remoteInfo = WarrantyWallet;
-		};
 		AA4DF4F72EA85C180080C098 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA27F7342EA5DC680091301A /* Project object */;
@@ -52,7 +45,6 @@
 /* Begin PBXFileReference section */
 		AA27F73C2EA5DC680091301A /* WarrantyWallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WarrantyWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA27F74E2EA5DC6A0091301A /* WarrantyWalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WarrantyWalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA27F7582EA5DC6A0091301A /* WarrantyWalletUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WarrantyWalletUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA4DF4EA2EA85C180080C098 /* WarrantyWalletActionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WarrantyWalletActionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA4DF4EC2EA85C180080C098 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -105,11 +97,6 @@
 			path = WarrantyWalletTests;
 			sourceTree = "<group>";
 		};
-		AA27F75B2EA5DC6A0091301A /* WarrantyWalletUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = WarrantyWalletUITests;
-			sourceTree = "<group>";
-		};
 		AA4DF4EE2EA85C180080C098 /* WarrantyWalletActionExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -135,13 +122,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		AA27F7552EA5DC6A0091301A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		AA4DF4E72EA85C180080C098 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -158,7 +138,6 @@
 			children = (
 				AA27F73E2EA5DC680091301A /* WarrantyWallet */,
 				AA27F7512EA5DC6A0091301A /* WarrantyWalletTests */,
-				AA27F75B2EA5DC6A0091301A /* WarrantyWalletUITests */,
 				AA4DF4EE2EA85C180080C098 /* WarrantyWalletActionExtension */,
 				AA4DF4EB2EA85C180080C098 /* Frameworks */,
 				AA27F73D2EA5DC680091301A /* Products */,
@@ -170,7 +149,6 @@
 			children = (
 				AA27F73C2EA5DC680091301A /* WarrantyWallet.app */,
 				AA27F74E2EA5DC6A0091301A /* WarrantyWalletTests.xctest */,
-				AA27F7582EA5DC6A0091301A /* WarrantyWalletUITests.xctest */,
 				AA4DF4EA2EA85C180080C098 /* WarrantyWalletActionExtension.appex */,
 			);
 			name = Products;
@@ -234,29 +212,6 @@
 			productReference = AA27F74E2EA5DC6A0091301A /* WarrantyWalletTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		AA27F7572EA5DC6A0091301A /* WarrantyWalletUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = AA27F7682EA5DC6A0091301A /* Build configuration list for PBXNativeTarget "WarrantyWalletUITests" */;
-			buildPhases = (
-				AA27F7542EA5DC6A0091301A /* Sources */,
-				AA27F7552EA5DC6A0091301A /* Frameworks */,
-				AA27F7562EA5DC6A0091301A /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				AA27F75A2EA5DC6A0091301A /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				AA27F75B2EA5DC6A0091301A /* WarrantyWalletUITests */,
-			);
-			name = WarrantyWalletUITests;
-			packageProductDependencies = (
-			);
-			productName = WarrantyWalletUITests;
-			productReference = AA27F7582EA5DC6A0091301A /* WarrantyWalletUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 		AA4DF4E92EA85C180080C098 /* WarrantyWalletActionExtension */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AA4DF4FE2EA85C180080C098 /* Build configuration list for PBXNativeTarget "WarrantyWalletActionExtension" */;
@@ -296,10 +251,6 @@
 						CreatedOnToolsVersion = 26.0;
 						TestTargetID = AA27F73B2EA5DC680091301A;
 					};
-					AA27F7572EA5DC6A0091301A = {
-						CreatedOnToolsVersion = 26.0;
-						TestTargetID = AA27F73B2EA5DC680091301A;
-					};
 					AA4DF4E92EA85C180080C098 = {
 						CreatedOnToolsVersion = 26.0;
 					};
@@ -323,7 +274,6 @@
 			targets = (
 				AA27F73B2EA5DC680091301A /* WarrantyWallet */,
 				AA27F74D2EA5DC6A0091301A /* WarrantyWalletTests */,
-				AA27F7572EA5DC6A0091301A /* WarrantyWalletUITests */,
 				AA4DF4E92EA85C180080C098 /* WarrantyWalletActionExtension */,
 			);
 		};
@@ -338,13 +288,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AA27F74C2EA5DC6A0091301A /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AA27F7562EA5DC6A0091301A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -375,13 +318,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		AA27F7542EA5DC6A0091301A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		AA4DF4E62EA85C180080C098 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -396,11 +332,6 @@
 			isa = PBXTargetDependency;
 			target = AA27F73B2EA5DC680091301A /* WarrantyWallet */;
 			targetProxy = AA27F74F2EA5DC6A0091301A /* PBXContainerItemProxy */;
-		};
-		AA27F75A2EA5DC6A0091301A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = AA27F73B2EA5DC680091301A /* WarrantyWallet */;
-			targetProxy = AA27F7592EA5DC6A0091301A /* PBXContainerItemProxy */;
 		};
 		AA4DF4F82EA85C180080C098 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -645,46 +576,6 @@
 			};
 			name = Release;
 		};
-		AA27F7692EA5DC6A0091301A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SD474JC36C;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ethangoldman.WarrantyWalletUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = WarrantyWallet;
-			};
-			name = Debug;
-		};
-		AA27F76A2EA5DC6A0091301A /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = SD474JC36C;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ethangoldman.WarrantyWalletUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = WarrantyWallet;
-			};
-			name = Release;
-		};
 		AA4DF4FB2EA85C180080C098 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -769,15 +660,6 @@
 			buildConfigurations = (
 				AA27F7662EA5DC6A0091301A /* Debug */,
 				AA27F7672EA5DC6A0091301A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		AA27F7682EA5DC6A0091301A /* Build configuration list for PBXNativeTarget "WarrantyWalletUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA27F7692EA5DC6A0091301A /* Debug */,
-				AA27F76A2EA5DC6A0091301A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
