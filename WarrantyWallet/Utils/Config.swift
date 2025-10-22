@@ -23,18 +23,6 @@ struct Config {
         return ""
     }()
     
-    // MARK: - Brave Search Configuration
-    static let braveSearchAPIKey: String = {
-        if let key = ProcessInfo.processInfo.environment["BRAVE_SEARCH_API_KEY"], !key.isEmpty {
-            return key
-        }
-        
-        let secretsKey = (Secrets.braveSearchAPIKey as String?) ?? ""
-        if !secretsKey.isEmpty { return secretsKey }
-        
-        print("⚠️ Warning: BRAVE_SEARCH_API_KEY not configured (env or Secrets.swift)")
-        return ""
-    }()
     
     // MARK: - App Configuration
     
@@ -54,7 +42,5 @@ struct Config {
         return !openAIAPIKey.isEmpty
     }
     
-    static var isBraveSearchKeyConfigured: Bool {
-        return !braveSearchAPIKey.isEmpty
-    }
+
 }

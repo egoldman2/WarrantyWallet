@@ -443,23 +443,7 @@ struct FullScreenImageView: View {
     }
 }
 
-// MARK: - Edit Warranty Item View Placeholder
 
-struct EditWarrantyItemView: View {
-    @ObservedObject var item: WarrantyItem
-    let warrantyService: WarrantyService
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        Text("Edit functionality coming soon")
-            .navigationTitle("Edit Item")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-    }
-}
 
 #Preview {
     let context = PersistenceController.preview.container.viewContext
