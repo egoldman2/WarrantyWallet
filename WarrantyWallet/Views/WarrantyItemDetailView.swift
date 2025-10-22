@@ -45,6 +45,13 @@ struct WarrantyItemDetailView: View {
         .navigationTitle(item.itemName ?? "Item Details")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: shareWarrantyCard) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.title3)
+                }
+            }
+            
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Edit") {
                     showingEditSheet = true
@@ -349,6 +356,28 @@ struct WarrantyItemDetailView: View {
     }
     
     // MARK: - Helper Functions
+    
+    private func shareWarrantyCard() {
+        let warrantyCardText = warrantyService.generateWarrantyCard(for: item)
+        
+        let activityViewController = UIActivityViewController(
+            activityItems: [warrantyCardText],
+            applicationActivities: nil
+        )
+        
+        // For iPad support
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first,
+           let rootViewController = window.rootViewController {
+            
+            // Present from the root view controller
+            if let presentedViewController = rootViewController.presentedViewController {
+                presentedViewController.present(activityViewController, animated: true)
+            } else {
+                rootViewController.present(activityViewController, animated: true)
+            }
+        }
+    }
     
     private func deleteItem() {
         withAnimation {
